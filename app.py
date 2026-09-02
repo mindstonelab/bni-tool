@@ -11,10 +11,9 @@ import pandas as pd
 import streamlit as st
 from openai import APIConnectionError, APIStatusError, OpenAI
 
-# 1. 頁面配置與配色設定（深藍色 #003366 與 金色 #C9A96E）
+# 1. 頁面配置與配色設定（Flat Navy Theme & Rounded Corners）
 st.set_page_config(
     page_title="BNI 人脈掘金",
-    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -22,56 +21,121 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    :root {
-        --primary-blue: #003366;
-        --accent-gold: #C9A96E;
+    /* Global Page Background & Fonts */
+    .stApp {
+        background-color: #0A192F;
+        color: #E6F1FF;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+    
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #112240;
+        border-right: 1px solid #1E2D4A;
+    }
+    
+    /* Headers & Text */
     .main-header {
-        color: var(--primary-blue);
-        font-weight: 800;
-        border-bottom: 2px solid var(--accent-gold);
-        padding-bottom: 8px;
-        margin-bottom: 20px;
+        color: #64FFDA;
+        font-weight: 700;
+        font-size: 2.2rem;
+        letter-spacing: -0.5px;
+        border-bottom: 2px solid #1E2D4A;
+        padding-bottom: 12px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
+    .section-title {
+        color: #64FFDA;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-top: 24px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Flat Member Cards */
     .member-card {
-        background-color: #FFFFFF;
-        border: 1px solid #E0E0E0;
-        border-left: 5px solid var(--accent-gold);
-        border-radius: 8px;
-        padding: 18px 22px;
-        margin-bottom: 18px;
-        box-shadow: 0 4px 6px rgba(0, 51, 102, 0.05);
+        background-color: #112240;
+        border: 1px solid #233554;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: none;
     }
     .card-title {
-        color: var(--primary-blue);
-        font-size: 1.25rem;
-        font-weight: bold;
-        margin-bottom: 6px;
+        color: #CCD6F6;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     .card-meta {
-        color: #555555;
+        color: #8892B0;
         font-size: 0.95rem;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .card-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
     .card-reason {
-        color: #333333;
-        background-color: #F8F9FA;
-        padding: 10px;
-        border-radius: 6px;
+        color: #8892B0;
+        background-color: #172A45;
+        border-radius: 8px;
+        padding: 12px 16px;
         font-size: 0.95rem;
-        margin-bottom: 12px;
+        line-height: 1.5;
+        margin-bottom: 14px;
+    }
+    
+    /* Inputs, Buttons, & Code Blocks */
+    .stTextArea textarea, .stTextInput input, .stSelectbox > div > div {
+        background-color: #172A45 !important;
+        color: #E6F1FF !important;
+        border: 1px solid #233554 !important;
+        border-radius: 12px !important;
+    }
+    .stTextArea textarea:focus, .stTextInput input:focus {
+        border-color: #64FFDA !important;
+        box-shadow: none !important;
     }
     .stButton>button {
-        background-color: var(--primary-blue);
-        color: #FFFFFF;
-        border-radius: 6px;
-        border: 1px solid var(--accent-gold);
-        font-weight: bold;
+        background-color: #64FFDA;
+        color: #0A192F;
+        border-radius: 12px;
+        border: none;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 10px 24px;
+        transition: all 0.2s ease;
     }
     .stButton>button:hover {
-        background-color: #002244;
-        color: var(--accent-gold);
-        border-color: var(--accent-gold);
+        background-color: #4CD9B3;
+        color: #0A192F;
+        border: none;
+    }
+    code {
+        border-radius: 8px !important;
+        background-color: #172A45 !important;
+        color: #64FFDA !important;
+    }
+    
+    /* Bootstrap SVG Icon Helper Alignment */
+    .bi-icon {
+        display: inline-block;
+        vertical-align: -0.125em;
+        fill: currentColor;
     }
     </style>
 """,
@@ -116,7 +180,15 @@ def load_bni_data():
 
 # 3. 側邊欄：DeepSeek API Key 與端點設定
 with st.sidebar:
-    st.markdown("### ⚙️ 系統設定")
+    st.markdown(
+        """
+        <div style="color: #64FFDA; font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">
+            <svg class="bi-icon" width="20" height="20" viewBox="0 0 16 16"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/></svg>
+            系統設定
+        </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
     if "deepseek_api_key" not in st.session_state:
         st.session_state.deepseek_api_key = ""
@@ -131,7 +203,6 @@ with st.sidebar:
     if api_key_input:
         st.session_state.deepseek_api_key = api_key_input.strip()
 
-    # 端點選擇：避免海外伺服器連線官方被封
     endpoint_option = st.selectbox(
         "連線節點選擇",
         options=[
@@ -158,13 +229,19 @@ with st.sidebar:
     **使用說明：**
     1. 輸入有效的 DeepSeek 官方 API Key (`sk-...`)。
     2. 若 Streamlit Cloud 提示連線超時，請在上方切換為 **海外加速通道**。
-    3. 在主畫面輸入引薦需求，點擊「🚀 搜尋人脈」。
+    3. 在主畫面輸入引薦需求，點擊「搜尋人脈」。
     """
     )
 
-# 4. 主畫面邏輯（無歷史紀錄，每次刷新對話框必為空白）
+# 4. 主畫面邏輯
 st.markdown(
-    '<h1 class="main-header">🤝 BNI 人脈掘金系統</h1>', unsafe_allow_html=True
+    """
+    <h1 class="main-header">
+        <svg class="bi-icon" width="32" height="32" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg>
+        BNI 人脈掘金系統
+    </h1>
+""",
+    unsafe_allow_html=True,
 )
 
 user_prompt = st.text_area(
@@ -174,7 +251,7 @@ user_prompt = st.text_area(
     placeholder="在此輸入您的人脈對接需求...",
 )
 
-search_button = st.button("🚀 搜尋人脈", use_container_width=True)
+search_button = st.button("搜尋人脈", use_container_width=True)
 
 
 # 5. API 呼叫與解析函數
@@ -208,7 +285,6 @@ def query_deepseek(
         f"【BNI 會員數據庫】\n{dataset_text}\n\n【使用者需求】\n{requirement}"
     )
 
-    # 決定呼叫節點
     if endpoint_choice == "海外加速通道 1 (api.chatanywhere.tech)":
         target_bases = ["[https://api.chatanywhere.tech/v1](https://api.chatanywhere.tech/v1)"]
     elif endpoint_choice == "海外加速通道 2 (api.openai-proxy.org/deepseek)":
@@ -216,7 +292,6 @@ def query_deepseek(
     elif endpoint_choice == "自訂 Base URL":
         target_bases = [custom_base.strip().rstrip("/")]
     else:
-        # 官方端點
         target_bases = [
             "[https://api.deepseek.com](https://api.deepseek.com)",
             "[https://api.deepseek.com/v1](https://api.deepseek.com/v1)",
@@ -266,19 +341,17 @@ if search_button:
     current_key = st.session_state.get("deepseek_api_key", "").strip()
 
     if not current_key:
-        st.error("❌ 請先在左側邊欄輸入有效的 DeepSeek API Key。")
+        st.error("請先在左側邊欄輸入有效的 DeepSeek API Key。")
     elif not user_prompt.strip():
-        st.warning("⚠️ 請輸入搜尋需求內容。")
+        st.warning("請輸入搜尋需求內容。")
     else:
         df_bni = load_bni_data()
         if df_bni is None or df_bni.empty:
             st.error(
-                "❌ 找不到 `bni_data.csv` 或檔案內容為空，請確認資料庫已放置於伺服器同目錄下。"
+                "找不到 `bni_data.csv` 或檔案內容為空，請確認資料庫已放置於伺服器同目錄下。"
             )
         else:
-            with st.spinner(
-                "🔍 正在檢索數據並由 AI 生成精準引薦分析..."
-            ):
+            with st.spinner("正在檢索數據並由 AI 生成精準引薦分析..."):
                 try:
                     dataset_text = df_bni.to_string(index=False)
                     raw_text = query_deepseek(
@@ -295,11 +368,17 @@ if search_button:
 
                     if not results:
                         st.info(
-                            "💡 在現有資料庫中未找到符合該條件的會員，請嘗試更換關鍵字或擴大搜尋條件。"
+                            "在現有資料庫中未找到符合該條件的會員，請嘗試更換關鍵字或擴大搜尋條件。"
                         )
                     else:
                         st.markdown(
-                            f"### 🎯 為您匹配到 {len(results)} 位精準人脈："
+                            f"""
+                            <div class="section-title">
+                                <svg class="bi-icon" width="22" height="22" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M11.354 4.646a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                                為您匹配到 {len(results)} 位精準人脈：
+                            </div>
+                        """,
+                            unsafe_allow_html=True,
                         )
 
                         for idx, item in enumerate(results, 1):
@@ -312,42 +391,54 @@ if search_button:
                             st.markdown(
                                 f"""
                                 <div class="member-card">
-                                    <div class="card-title">#{idx} {name}</div>
-                                    <div class="card-meta">📍 <b>分會：</b>{chapter} ｜ 💼 <b>行業：</b>{industry}</div>
-                                    <div class="card-reason">💡 <b>匹配理由：</b>{reason}</div>
+                                    <div class="card-title">
+                                        <svg class="bi-icon" width="20" height="20" viewBox="0 0 16 16"><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                                        #{idx} {name}
+                                    </div>
+                                    <div class="card-meta">
+                                        <span>
+                                            <svg class="bi-icon" width="16" height="16" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+                                            <b>分會：</b>{chapter}
+                                        </span>
+                                        <span>
+                                            <svg class="bi-icon" width="16" height="16" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v1.384l7.614 2.03a1.5 1.5 0 0 0 .772 0L16 5.884V4.5A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5z"/><path d="M0 12.5A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5V6.85L8.741 8.826a2.5 2.5 0 0 1-1.482 0L0 6.85v5.65z"/></svg>
+                                            <b>行業：</b>{industry}
+                                        </span>
+                                    </div>
+                                    <div class="card-reason">
+                                        <b>匹配理由：</b>{reason}
+                                    </div>
                                 </div>
                             """,
                                 unsafe_allow_html=True,
                             )
 
                             st.markdown(
-                                "**📋 複製 WhatsApp 破冰話術草稿：**"
+                                "**複製 WhatsApp 破冰話術草稿：**"
                             )
                             st.code(message, language="text")
                             st.markdown("<br>", unsafe_allow_html=True)
 
                 except json.JSONDecodeError:
-                    st.error(
-                        "❌ 解析模型回傳格式失敗，請重試或微調搜尋需求。"
-                    )
+                    st.error("解析模型回傳格式失敗，請重試或微調搜尋需求。")
                 except APIStatusError as e:
                     if e.status_code == 401:
                         st.error(
-                            "❌ API Key 驗證失敗 (401 Unauthorized)。請確認輸入的 Key 是否正確。"
+                            "API Key 驗證失敗 (401 Unauthorized)。請確認輸入的 Key 是否正確。"
                         )
                     elif e.status_code == 402:
                         st.error(
-                            "❌ 帳戶餘額不足 (402 Payment Required)。請前往 DeepSeek 官方後台充值餘額。"
+                            "帳戶餘額不足 (402 Payment Required)。請前往 DeepSeek 官方後台充值餘額。"
                         )
                     else:
                         st.error(
-                            f"❌ API 請求失敗 (狀態碼 {e.status_code})：{e.message}"
+                            f"API 請求失敗 (狀態碼 {e.status_code})：{e.message}"
                         )
                 except APIConnectionError as e:
                     st.error(
-                        f"❌ 連線至該端點失敗（連線超時或被攔截）。\n\n"
+                        f"連線至該端點失敗（連線超時或被攔截）。\n\n"
                         f"**詳細錯誤**：{e}\n\n"
                         f"👉 **解決方式**：請在左側邊欄將【連線節點選擇】切換為 **海外加速通道 1** 或 **海外加速通道 2** 重試！"
                     )
                 except Exception as e:
-                    st.error(f"❌ 執行時發生非預期錯誤：{e}")
+                    st.error(f"執行時發生非預期錯誤：{e}")
