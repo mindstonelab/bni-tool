@@ -58,6 +58,13 @@ st.markdown(
         gap: 8px;
     }
 
+    /* Fix Field Label Contrast */
+    .stTextArea label, .stTextInput label, .stSelectbox label {
+        color: #E6F1FF !important;
+        font-size: 1rem !important;
+        font-weight: 500 !important;
+    }
+
     /* Flat Member Cards */
     .member-card {
         background-color: #112240;
@@ -105,6 +112,9 @@ st.markdown(
         color: #E6F1FF !important;
         border: 1px solid #233554 !important;
         border-radius: 12px !important;
+    }
+    .stTextArea textarea::placeholder {
+        color: #8892B0 !important;
     }
     .stTextArea textarea:focus, .stTextInput input:focus {
         border-color: #64FFDA !important;
