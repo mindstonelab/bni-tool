@@ -14,7 +14,7 @@ from openai import APIConnectionError, APIStatusError, OpenAI
 # 1. 頁面配置與配色設定（深藍色 #003366 與 金色 #C9A96E）
 st.set_page_config(
     page_title="BNI 人脈掘金",
-    page_icon="🤝",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
