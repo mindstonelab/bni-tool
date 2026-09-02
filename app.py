@@ -1,5 +1,5 @@
 # ==============================================================================
-# BNI Mobile Application Structure (Professional Flat Design)
+# BNI Mobile Application (Persistent Session State & Auto-Fill)
 # ==============================================================================
 
 import json
@@ -19,7 +19,6 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Global Page Styling */
     .stApp {
         background-color: #0B132B;
         color: #E0E6ED;
@@ -29,7 +28,6 @@ st.markdown(
     header[data-testid="stHeader"] { visibility: hidden; height: 0px; }
     footer { visibility: hidden; }
 
-    /* Typography & Headers */
     .app-header {
         color: #C9A96E;
         font-weight: 700;
@@ -42,7 +40,6 @@ st.markdown(
         gap: 10px;
     }
     
-    /* Fixed Bottom Navigation Bar (No Underlines) */
     .bottom-nav {
         position: fixed;
         bottom: 0; left: 0; right: 0;
@@ -55,24 +52,13 @@ st.markdown(
         z-index: 999999;
     }
     .nav-item {
-        display: flex; 
-        flex-direction: column;
-        align-items: center; 
-        justify-content: center;
-        color: #8D99AE; 
-        text-decoration: none !important;
-        font-size: 0.75rem; 
-        font-weight: 500; 
-        width: 33%;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        color: #8D99AE; text-decoration: none !important;
+        font-size: 0.75rem; font-weight: 500; width: 33%;
     }
-    .nav-item:hover, .nav-item:focus, .nav-item:visited {
-        text-decoration: none !important;
-    }
-    .nav-item.active { 
-        color: #C9A96E; 
-    }
+    .nav-item.active { color: #C9A96E; }
 
-    /* Notification Cards */
     .notification-card {
         background-color: #1C2541;
         border-left: 4px solid #C9A96E;
@@ -87,7 +73,6 @@ st.markdown(
     .notification-subtitle { color: #8D99AE; font-size: 0.85rem; margin-bottom: 10px; }
     .notification-body { background-color: #0B132B; border-radius: 8px; padding: 12px; color: #E0E6ED; font-size: 0.9rem; margin-bottom: 10px; }
 
-    /* Form Fields & Placeholders */
     .stTextInput input, .stTextArea textarea, .stSelectbox > div > div {
         background-color: #1C2541 !important; 
         color: #FFFFFF !important;
@@ -99,36 +84,36 @@ st.markdown(
         opacity: 1 !important;
     }
     .stTextInput label, .stTextArea label, .stSelectbox label { 
-        color: #E0E6ED !important; 
-        font-size: 0.9rem !important; 
-        font-weight: 500 !important;
+        color: #E0E6ED !important; font-size: 0.9rem !important; font-weight: 500 !important;
     }
 
-    /* Professional Action Button */
     .stButton>button { 
-        background-color: #C9A96E; 
-        color: #0B132B; 
-        border-radius: 10px; 
-        border: none; 
-        font-weight: 700; 
-        width: 100%; 
-        padding: 12px; 
-        font-size: 0.95rem;
-        transition: background-color 0.2s ease;
+        background-color: #C9A96E; color: #0B132B; 
+        border-radius: 10px; border: none; font-weight: 700; 
+        width: 100%; padding: 12px; font-size: 0.95rem;
     }
-    .stButton>button:hover {
-        background-color: #B59357;
-        color: #0B132B;
-    }
-
-    /* Bootstrap Icon Helper */
+    .stButton>button:hover { background-color: #B59357; color: #0B132B; }
     .bi-icon { display: inline-block; vertical-align: -0.125em; fill: currentColor; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# 2. Data Loader
+# 2. State Initialization
+if "deepseek_api_key" not in st.session_state: st.session_state.deepseek_api_key = ""
+if "endpoint_option" not in st.session_state: st.session_state.endpoint_option = "官方直連 (api.deepseek.com)"
+if "my_name" not in st.session_state: st.session_state.my_name = ""
+if "my_chapter" not in st.session_state: st.session_state.my_chapter = ""
+if "my_industry" not in st.session_state: st.session_state.my_industry = ""
+if "my_strengths" not in st.session_state: st.session_state.my_strengths = ""
+if "latest_results" not in st.session_state: st.session_state.latest_results = []
+if "active_tab" not in st.session_state: st.session_state.active_tab = "Search"
+
+params = st.query_params
+if "tab" in params:
+    st.session_state.active_tab = params["tab"]
+
+# 3. Data Loader
 @st.cache_data(show_spinner=False)
 def load_bni_data():
     csv_file = "bni_data.csv"
@@ -145,22 +130,6 @@ def load_bni_data():
         return df.rename(columns=mapping)
     except Exception:
         return None
-
-# 3. Session State Initialization
-if "active_tab" not in st.session_state: st.session_state.active_tab = "Search"
-if "latest_results" not in st.session_state: st.session_state.latest_results = []
-if "deepseek_api_key" not in st.session_state: st.session_state.deepseek_api_key = ""
-if "endpoint_option" not in st.session_state: st.session_state.endpoint_option = "官方直連 (api.deepseek.com)"
-
-# User Profile Placeholders
-if "my_name" not in st.session_state: st.session_state.my_name = ""
-if "my_chapter" not in st.session_state: st.session_state.my_chapter = ""
-if "my_industry" not in st.session_state: st.session_state.my_industry = ""
-if "my_strengths" not in st.session_state: st.session_state.my_strengths = ""
-
-params = st.query_params
-if "tab" in params:
-    st.session_state.active_tab = params["tab"]
 
 def clean_json(text: str) -> str:
     cleaned = text.strip()
@@ -196,7 +165,7 @@ def query_deepseek(api_key, dataset_text, req_prompt, endpoint_choice):
     if last_err: raise last_err
 
 # ==============================================================================
-# TAB 1: HOME
+# TAB 1: HOME (NOTIFICATIONS ONLY)
 # ==============================================================================
 if st.session_state.active_tab == "Home":
     st.markdown(
@@ -212,31 +181,14 @@ if st.session_state.active_tab == "Home":
     results = st.session_state.latest_results
 
     if not results:
-        # User Profile State Sample
-        display_name = st.session_state.my_name if st.session_state.my_name else "[會員姓名]"
-        display_chapter = st.session_state.my_chapter if st.session_state.my_chapter else "[所屬分會]"
-        display_industry = st.session_state.my_industry if st.session_state.my_industry else "[專業領域]"
-        display_strengths = st.session_state.my_strengths if st.session_state.my_strengths else "[請在 Profile 頁面設定您的業務核心與優勢]"
-
-        st.markdown(
-            f"""
-            <div class="notification-card">
-                <div class="notification-title">#1 {display_name} (預設 Profile 展示範例)</div>
-                <div class="notification-subtitle">分會: {display_chapter} | 行業: {display_industry}</div>
-                <div class="notification-body"><b>核心優勢:</b> {display_strengths}</div>
-            </div>
-        """,
-            unsafe_allow_html=True,
-        )
-
-        # Database Result Sample
+        # Fallback Real Notification Sample from CSV
         st.markdown(
             """
             <div class="notification-card">
-                <div class="notification-title">#1 Michelle Chu</div>
+                <div class="notification-title">#1 Michelle Chu (系統配對通知)</div>
                 <div class="notification-subtitle">分會: Venture | 行業: 會計服務</div>
                 <div class="notification-body">
-                    <b>匹配理由:</b> 同行人數統計：該會員具備相同/相近專業的會計經驗，專注中小企外判理帳與稅務審查。
+                    <b>配對理由:</b> 該會員具備相近專業的會計經驗，專注中小企外判理帳與稅務審查，可對接財務諮詢需求。
                 </div>
             </div>
         """,
@@ -251,7 +203,7 @@ if st.session_state.active_tab == "Home":
                 <div class="notification-card">
                     <div class="notification-title">#{idx} {item.get('name', 'N/A')}</div>
                     <div class="notification-subtitle">分會: {item.get('chapter', 'N/A')} | 行業: {item.get('industry', 'N/A')}</div>
-                    <div class="notification-body"><b>匹配理由:</b> {item.get('reason', 'N/A')}</div>
+                    <div class="notification-body"><b>配對理由:</b> {item.get('reason', 'N/A')}</div>
                 </div>
             """,
                 unsafe_allow_html=True,
@@ -260,7 +212,7 @@ if st.session_state.active_tab == "Home":
             st.code(item.get("whatsapp_message", ""), language="text")
 
 # ==============================================================================
-# TAB 2: SEARCH
+# TAB 2: SEARCH (AUTO-FILLED FROM PROFILE)
 # ==============================================================================
 elif st.session_state.active_tab == "Search":
     st.markdown(
@@ -273,32 +225,32 @@ elif st.session_state.active_tab == "Search":
         unsafe_allow_html=True,
     )
 
-    st.markdown("**1. 我的 Profile 預設資料：**")
+    st.markdown("**1. 發起人資料（已自動同步 Profile）：**")
     col1, col2 = st.columns(2)
     with col1:
-        s_name = st.text_input("會員姓名", value=st.session_state.my_name, placeholder="[請輸入姓名]")
-        s_chapter = st.text_input("所屬分會", value=st.session_state.my_chapter, placeholder="[請輸入分會]")
+        st.text_input("會員姓名", value=st.session_state.my_name, disabled=True)
+        st.text_input("所屬分會", value=st.session_state.my_chapter, disabled=True)
     with col2:
-        s_industry = st.text_input("登記專業領域", value=st.session_state.my_industry, placeholder="[請輸入專業領域]")
+        st.text_input("登記專業領域", value=st.session_state.my_industry, disabled=True)
         s_count = st.selectbox("匹配人數", options=[1, 2, 3, 5], index=2)
 
-    s_strengths = st.text_area("業務核心與優勢", value=st.session_state.my_strengths, placeholder="[請輸入業務核心內容]", height=80)
+    st.text_area("業務核心與優勢", value=st.session_state.my_strengths, disabled=True, height=80)
 
     st.markdown("**2. 目標合作需求：**")
     target_goal = st.text_area("目標對接需求", placeholder="例如：尋找 3 位餐飲相關會員洽談合作...", height=80)
 
     if st.button("執行精準配對"):
-        key = st.session_state.get("deepseek_api_key", "").strip()
+        key = st.session_state.deepseek_api_key.strip()
         if not key:
-            st.error("請先至 【Profile】 頁面設定您的 DeepSeek API Key。")
+            st.error("請先至 【Profile】 頁面輸入並儲存 DeepSeek API Key。")
         else:
             df_bni = load_bni_data()
             if df_bni is None or df_bni.empty:
                 st.error("找不到 bni_data.csv 或資料庫內容為空。")
             else:
                 formatted_req = (
-                    f"搜尋發起人: {s_name} ({s_chapter}分會, {s_industry})\n"
-                    f"發起人核心優勢: {s_strengths}\n"
+                    f"搜尋發起人: {st.session_state.my_name} ({st.session_state.my_chapter}分會, {st.session_state.my_industry})\n"
+                    f"發起人核心優勢: {st.session_state.my_strengths}\n"
                     f"希望匹配人數: {s_count}\n"
                     f"目標尋找需求: {target_goal if target_goal else '不限，尋找最適合的合作夥伴'}"
                 )
@@ -314,7 +266,7 @@ elif st.session_state.active_tab == "Search":
                         st.error(f"配對失敗: {e}")
 
 # ==============================================================================
-# TAB 3: PROFILE
+# TAB 3: PROFILE (AUTO-SAVE VIA STATE KEYS)
 # ==============================================================================
 elif st.session_state.active_tab == "Profile":
     st.markdown(
@@ -328,20 +280,20 @@ elif st.session_state.active_tab == "Profile":
     )
 
     st.markdown("**我的預設個人資料：**")
-    st.session_state.my_name = st.text_input("會員姓名", value=st.session_state.my_name, placeholder="[請輸入姓名]")
-    st.session_state.my_chapter = st.text_input("所屬分會", value=st.session_state.my_chapter, placeholder="[請輸入分會]")
-    st.session_state.my_industry = st.text_input("登記專業領域", value=st.session_state.my_industry, placeholder="[請輸入專業領域]")
-    st.session_state.my_strengths = st.text_area("業務核心與優勢", value=st.session_state.my_strengths, placeholder="[請輸入業務核心內容]", height=90)
+    st.text_input("會員姓名", key="my_name", placeholder="例如: Michelle Chu")
+    st.text_input("所屬分會", key="my_chapter", placeholder="例如: Venture")
+    st.text_input("登記專業領域", key="my_industry", placeholder="例如: 會計服務")
+    st.text_area("業務核心與優勢", key="my_strengths", placeholder="例如: 專注中小企外判理帳與稅務審查...", height=90)
 
     st.markdown("---")
     st.markdown("**API 設定：**")
-    st.session_state.deepseek_api_key = st.text_input("DeepSeek API Key", value=st.session_state.deepseek_api_key, type="password", placeholder="sk-...")
-    st.session_state.endpoint_option = st.selectbox("連線節點選擇", options=["官方直連 (api.deepseek.com)", "海外加速通道 1 (api.chatanywhere.tech)", "海外加速通道 2 (api.openai-proxy.org/deepseek)"])
+    st.text_input("DeepSeek API Key", key="deepseek_api_key", type="password", placeholder="sk-...")
+    st.selectbox("連線節點選擇", options=["官方直連 (api.deepseek.com)", "海外加速通道 1 (api.chatanywhere.tech)", "海外加速通道 2 (api.openai-proxy.org/deepseek)"], key="endpoint_option")
 
-    st.info("Profile 資料將自動備份並連動至 Search 頁面。")
+    st.info("資料會自動儲存於目前 Session，並同步至 Search 頁面。")
 
 # ==============================================================================
-# FIXED BOTTOM NAVIGATION BAR
+# NAVIGATION BAR
 # ==============================================================================
 h_active = "active" if st.session_state.active_tab == "Home" else ""
 s_active = "active" if st.session_state.active_tab == "Search" else ""
