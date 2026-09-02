@@ -28,13 +28,28 @@ st.markdown(
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     
-    /* Sidebar Styling */
+    /* Sidebar Background & Base Text */
     section[data-testid="stSidebar"] {
         background-color: #112240;
         border-right: 1px solid #1E2D4A;
     }
+    section[data-testid="stSidebar"] * {
+        color: #E6F1FF !important;
+    }
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] li, 
+    section[data-testid="stSidebar"] span {
+        color: #8892B0 !important;
+    }
     
-    /* Headers & Text */
+    /* Input & Select Box Text Fixes */
+    section[data-testid="stSidebar"] input, 
+    section[data-testid="stSidebar"] div[data-baseweb="select"] * {
+        color: #E6F1FF !important;
+        background-color: #172A45 !important;
+    }
+
+    /* Headers & Title Styling */
     .main-header {
         color: #64FFDA;
         font-weight: 700;
@@ -58,7 +73,7 @@ st.markdown(
         gap: 8px;
     }
 
-    /* Fix Field Label Contrast */
+    /* Form Field Labels */
     .stTextArea label, .stTextInput label, .stSelectbox label {
         color: #E6F1FF !important;
         font-size: 1rem !important;
