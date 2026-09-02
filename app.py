@@ -1,5 +1,5 @@
 # ==============================================================================
-# BNI Mobile Application (Persistent Session State & Auto-Fill)
+# BNI Mobile Application (Explicit Save Action & Verification)
 # ==============================================================================
 
 import json
@@ -266,7 +266,7 @@ elif st.session_state.active_tab == "Search":
                         st.error(f"配對失敗: {e}")
 
 # ==============================================================================
-# TAB 3: PROFILE (AUTO-SAVE VIA STATE KEYS)
+# TAB 3: PROFILE (WITH SAVE BUTTON AND VERIFICATION)
 # ==============================================================================
 elif st.session_state.active_tab == "Profile":
     st.markdown(
@@ -280,17 +280,43 @@ elif st.session_state.active_tab == "Profile":
     )
 
     st.markdown("**我的預設個人資料：**")
-    st.text_input("會員姓名", key="my_name", placeholder="例如: Michelle Chu")
-    st.text_input("所屬分會", key="my_chapter", placeholder="例如: Venture")
-    st.text_input("登記專業領域", key="my_industry", placeholder="例如: 會計服務")
-    st.text_area("業務核心與優勢", key="my_strengths", placeholder="例如: 專注中小企外判理帳與稅務審查...", height=90)
+    in_name = st.text_input("會員姓名", value=st.session_state.my_name, placeholder="例如: Michelle Chu")
+    in_chapter = st.text_input("所屬分會", value=st.session_state.my_chapter, placeholder="例如: Venture")
+    in_industry = st.text_input("登記專業領域", value=st.session_state.my_industry, placeholder="例如: 會計服務")
+    in_strengths = st.text_area("業務核心與優勢", value=st.session_state.my_strengths, placeholder="例如: 專注中小企外判理帳與稅務審查...", height=90)
 
     st.markdown("---")
     st.markdown("**API 設定：**")
-    st.text_input("DeepSeek API Key", key="deepseek_api_key", type="password", placeholder="sk-...")
-    st.selectbox("連線節點選擇", options=["官方直連 (api.deepseek.com)", "海外加速通道 1 (api.chatanywhere.tech)", "海外加速通道 2 (api.openai-proxy.org/deepseek)"], key="endpoint_option")
+    in_key = st.text_input("DeepSeek API Key", value=st.session_state.deepseek_api_key, type="password", placeholder="sk-...")
+    
+    endpoint_options = ["官方直連 (api.deepseek.com)", "海外加速通道 1 (api.chatanywhere.tech)", "海外加速通道 2 (api.openai-proxy.org/deepseek)"]
+    current_idx = endpoint_options.index(st.session_state.endpoint_option) if st.session_state.endpoint_option in endpoint_options else 0
+    in_endpoint = st.selectbox("連線節點選擇", options=endpoint_options, index=current_idx)
 
-    st.info("資料會自動儲存於目前 Session，並同步至 Search 頁面。")
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("儲存個人 Profile 設定"):
+        # Save inputs to Session State
+        st.session_state.my_name = in_name.strip()
+        st.session_state.my_chapter = in_chapter.strip()
+        st.session_state.my_industry = in_industry.strip()
+        st.session_state.my_strengths = in_strengths.strip()
+        st.session_state.deepseek_api_key = in_key.strip()
+        st.session_state.endpoint_option = in_endpoint
+
+        # Verify whether data is actually saved
+        saved_check = (
+            st.session_state.my_name == in_name.strip()
+            and st.session_state.my_chapter == in_chapter.strip()
+            and st.session_state.my_industry == in_industry.strip()
+            and st.session_state.my_strengths == in_strengths.strip()
+            and st.session_state.deepseek_api_key == in_key.strip()
+            and st.session_state.endpoint_option == in_endpoint
+        )
+
+        if saved_check:
+            st.success("儲存成功！資料已同步至 Search 頁面。")
+        else:
+            st.error("儲存失敗，請重試。")
 
 # ==============================================================================
 # NAVIGATION BAR
